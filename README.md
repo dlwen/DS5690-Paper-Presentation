@@ -75,125 +75,132 @@ Which would have the higher accuracy?
 
 ## KEY INNOVATION:  
 * Two-stage framework separating:  
-	1 Rationale Generation  
-	2 Answer Inference  
+	1. Rationale Generation  
+	2. Answer Inference  
 * Achieves SOTA with smaller model (<1B parameters)  
 * Reduces hallucination and improves convergence speed  
 
+<br>
 
-## Method: Two-Stage framework
-### Model General Architecture
-CoT problem into two stages:
-Rationale Generation (using both text + image)
-Answer Inference (using rationale + original inputs)
+## Method: Two-Stage framework  
+### Model General Architecture  
+CoT problem into two stages:  
+* Rationale Generation (using both text + image)  
+* Answer Inference (using rationale + original inputs)  
+<img width="952" alt="Screen Shot 2024-11-02 at 23 33 08" src="https://github.com/user-attachments/assets/94c75d88-35a1-4479-8cf3-340e4a187956">
 
-![](Screen%20Shot%202024-11-02%20at%2023.33.08.png)
+**Rationale Generation**  
+In the first stage, the model takes both language input (question, context, and options) and vision input (image features extracted by [ViT](https://arxiv.org/abs/2010.11929) to generate a reasoned rationale. This stage allows the model to form a coherent understanding of the problem by integrating information from both modalities. The vision features are processed through a ViT encoder and fused with the language features using an attention-based mechanism, enabling the model to generate rationales that incorporate both textual and visual context.
 
-In the first stage, the model takes both language input (question, context, and options) and vision input (image features extracted by ViT) to generate a reasoned rationale. This stage allows the model to form a coherent understanding of the problem by integrating information from both modalities. The vision features are processed through a ViT encoder and fused with the language features using an attention-based mechanism, enabling the model to generate rationales that incorporate both textual and visual context.
-
+**Answer Inference**  
 In the second stage, the generated rationale is appended to the original language input, creating an enhanced context for answer inference. This stage takes this combined input along with the original vision features to produce the final answer. The key innovation here is that the answer inference can use better-generated rationales that are grounded in multimodal information, reducing hallucination and improving accuracy. 
 
 Each stage is trained independently but shares the same model architecture, using a T5 encoder-decoder backbone enhanced with vision processing capabilities. This separation of tasks allows each stage to specialize in its task while maintaining the benefits of multimodal reasoning throughout the process. Experimental results show that this two-stage approach not only achieves state-of-the-art performance but does so with a relatively small model of less than 1 billion parameters, making it both effective and practical for real-world applications.
 
+<br>
 
 ### Multimodality Contributes to Reduce Hallucination 
-One of the key challenges in language models is hallucination mistakes in rationale generation. In the original problem space, 56% of model errors were due to hallucination, with the remaining 44% due to other types of mistakes. This high rate of hallucination is a significant problem that needed to be addressed.
+One of the key challenges in language models is hallucination mistakes in rationale generation. In the original problem space, 56% of model errors were due to hallucination, with the remaining 44% due to other types of mistakes. This high rate of hallucination is a significant problem that needed to be addressed.  
 
-The authors demonstrate how their multimodal approach helps solve this problem. They explore two different methods to incorporate visual information into their model: using image captions and using direct vision features. 
+The authors demonstrate how their multimodal approach helps solve this problem. They explore two different methods to incorporate visual information into their model: using image captions and direct vision features.  
 
-**Question 2: Which would method can more effectively reduce hallucination, Caption or Vision Features?**
+**Question 2: Which would method can more effectively reduce hallucination, Caption or Vision Features?**  
 
-**Caption**
+**Caption**  
 In the caption approach, they first convert the image into text descriptions and append these captions to the input. However, this led to minimal improvements - the rationale generation quality increased slightly from 90.73% to 90.88% RougeL score, and answer accuracy improved marginally from 78.57% to 79.37%. This suggests that converting visual information into text loses important details and does not fully solve the hallucination problem.
 
-**Vision Features**
-Their vision features approach, which directly processes the image using a Vision Transformer (ViT) and integrates these features with the text through an attention mechanism, showed much more substantial improvements. This method increased rationale generation quality from 90.73% to 93.46% RougeL score and significantly boosted answer accuracy from 78.57% to 85.31%.  The stark difference between the caption approach (+0.80% improvement) and the vision features approach (+6.74% improvement) demonstrates that direct visual feature processing is much more effective at grounding the model’s reasoning in actual evidence.
+**Vision Features**  
+Their vision features approach, which directly processes the image using a Vision Transformer (ViT) and integrates these features with the text through an attention mechanism, showed much more substantial improvements. This method increased rationale generation quality from 90.73% to 93.46% RougeL score and significantly boosted answer accuracy from 78.57% to 85.31%.  The stark difference between the caption approach (+0.80% improvement) and the vision features approach (+6.74% improvement) demonstrates that direct visual feature processing is much more effective at grounding the model’s reasoning in actual evidence.  
+<img width="469" alt="Screen Shot 2024-11-03 at 01 18 28" src="https://github.com/user-attachments/assets/247ebf9e-05bf-41de-9397-338a833d51d2">  
 
-![](Screen%20Shot%202024-11-03%20at%2001.18.28.png)
 
-With those effective rationales, the phenomenon of hallucination is mitigated — 60.7% hallucination mistakes have been corrected while only 29.3% remained unresolved. Vision features are indeed beneficial for generating effective rationales and contributing to accurate answer inference. The significant improvement in error correction demonstrates the power of combining multiple modalities in LLM reasoning.
-![](Screen%20Shot%202024-11-03%20at%2001.20.13.png)
+With those effective rationales, the phenomenon of hallucination is mitigated — 60.7% hallucination mistakes have been corrected while only 29.3% remained unresolved. Vision features are indeed beneficial for generating effective rationales and contributing to accurate answer inference. The significant improvement in error correction demonstrates the power of combining multiple modalities in LLM reasoning.  
+<img width="471" alt="Screen Shot 2024-11-03 at 01 20 13" src="https://github.com/user-attachments/assets/79d2401b-d593-466b-9d5f-1c07162dfe14">
 
+<br>
 
 ## Pseudocode
-![](Screen%20Shot%202024-11-04%20at%2023.50.20.png)
-![](Screen%20Shot%202024-11-04%20at%2023.48.26.png)
+<img width="484" alt="Screen Shot 2024-11-04 at 23 50 20" src="https://github.com/user-attachments/assets/21f2386a-971e-40b6-a857-aabe08a38ae7">
+<img width="416" alt="Screen Shot 2024-11-04 at 23 48 26" src="https://github.com/user-attachments/assets/5f2ff82b-53e0-44f1-8b77-8a205ba72b0e">
 
-
+<br>
 
 ## Experiments
 The paper adopts the T5 encoder-decoder architecture under Base (200M) and large (700M) settings in framework. The vision features are obtained by the frozen ViT-large encoder.  The experiments fine-tune the models up to 20 epochs, with a learning rate of 5e-5. The maximum input sequence length is 512. The batch size is 8. The experiments are run on 8 NVIDIA Tesla V100 32G GPUs. 
 
-### Dataset
-**ScienceQA**
-![](Screen%20Shot%202024-11-04%20at%2018.53.09.png)
-Baseline Models:
-i) Visual question answering (VQA) models
-(ii) LMs
-(iii) Fine-tuned large vision-language model
-Chameleon, LLaMA-Adapter, LLaVA, and InstructBLIP are concurrent works released several months after this paper
-Mutimodal-CoTLarge achieves substantial performance gains over the prior best model in publications (86.54%→90.45%) 
+### Dataset  
+[**ScienceQA**](https://github.com/lupantech/ScienceQA)  
+<img width="859" alt="Screen Shot 2024-11-04 at 18 53 09" src="https://github.com/user-attachments/assets/08124ae9-5ef9-4b06-af68-4335a48c2911">  
+* Baseline Models:  
+(i) Visual question answering (VQA) models  
+(ii) LMs  
+(iii) Fine-tuned large vision-language model  
+* Chameleon, LLaMA-Adapter, LLaVA, and InstructBLIP are concurrent works released several months after this paper  
+* Mutimodal-CoTLarge achieves substantial performance gains over the prior best model in publications (86.54%→90.45%)  
 
-**A-OKVQA**
-Multimoal-CoTBase also has the best accuracy over all chosen model on A-OKVQA dataset.
-![](7F7B4FD2-EF89-456E-BA82-82C59FBB6400.png)
+[**A-OKVQA**](https://arxiv.org/abs/2206.01718)  
+Multimoal-CoTBase also has the best accuracy over all chosen model on A-OKVQA dataset.  
+![7F7B4FD2-EF89-456E-BA82-82C59FBB6400](https://github.com/user-attachments/assets/c83cb62f-0237-44c3-b621-ab8168552ecb)
 
+<br>
 
+**Multimodality Boosts Convergence**  
+<img width="449" alt="Screen Shot 2024-11-04 at 18 59 41" src="https://github.com/user-attachments/assets/a2a08698-e9b0-4407-98d7-0462a18c1227">
 
-**Multimodality Boosts Convergence**
-![](Screen%20Shot%202024-11-04%20at%2018.59.41.png)
+One-stage: the No-CoT baseline QCM→A input-output format   
+Two-stage: Two-stage framework  
 
+The two-stage framework starts with better accuracy compared to the simpler one-stage methods that produce answers without reasoning steps. When vision features are added, the model creates better reasoning steps that lead to more accurate answers in the Multimodal-CoT approach. The flat shape of the two-stage framework shows the convergence speed is enhanceed.
 
-
-One-stage: the No-CoT baseline QCM→A input-output format
-Two-stage: Two-stage framework. 
-
-The two-stage framework starts with better accuracy compared to the simpler one-stage methods that produce answers without reasoning steps. However, when vision features are not included, the two-stage model’s performance doesn’t improve much over time because it generates poor-quality explanations. On the other hand, when vision features are added, the model creates better reasoning steps that lead to more accurate answers in our Multimodal-CoT approach.
-
+<br>
 
 ## Critical Analysis
-### Architecture vs. Data Contribution:
-* While the authors emphasize their two-stage architecture, the results suggest that the major improvement comes from the addition of visual features rather than the architectural innovation itself. According to the graph above, both one-stage and two-stage models show significant improvement when visual features are added, with the one-stage multimodal approach achieving similar performance to the two-stage baseline. This suggests that the rich information provided by visual features is the primary driver of improvement, rather than the proposed two-stage framework. 
-* The authors could have strengthened their architectural claims by conducting experiments that isolated the benefits of their two-stage approach from the inherent advantages of having additional visual information.
-### Unexplored Alternative Modal Interaction Patterns
-* The paper is the lack of exploration of alternative data flow designs. The current architecture follows a fixed pattern where visual features are computed and fused with language data, and then this fused information is used again with vision data in the second stage. However, the authors did not investigate other potential arrangements of modality interaction. 
-* They could have experimented with: 
-Stage 1: Input {Xlanguage, Xvision1} → Generate R
-Stage 2: Input {Xlanguage, Xvision2} → Generate Answer (where Xvision2 incorporates R with original visual features)
+### Architecture vs. Data Contribution:  
+* While the authors emphasize their two-stage architecture, the results suggest that the major improvement comes from the addition of visual features rather than the architectural innovation itself. According to the graph above, both one-stage and two-stage models show significant improvement when visual features are added, with the one-stage multimodal approach achieving similar performance to the two-stage baseline. This suggests that the rich information provided by visual features is the primary driver of improvement, rather than the proposed two-stage framework.   
+* The authors could have strengthened their architectural claims by conducting experiments that isolated the benefits of their two-stage approach from the inherent advantages of having additional visual information.  
+### Unexplored Alternative Modal Interaction Patterns  
+* The paper is the lack of exploration of alternative data flow designs. The current architecture follows a fixed pattern where visual features are computed and fused with language data, and then this fused information is used again with vision data in the second stage. However, the authors did not investigate other potential arrangements of modality interaction.  
+* They could have experimented with:  
+Stage 1: Input {Xlanguage, Xvision1} → Generate R  
+Stage 2: Input {Xlanguage, Xvision2} → Generate Answer (where Xvision2 incorporates R with original visual features)   
 
 
-# Impact
-## What is the impact of the work?
-* First formal approach to extend Chain-of-Thought to multimodal scenarios
-* Shows smaller models can achieve strong reasoning with multimodal input
-* Provides practical solution to reduce hallucination in language models
+## Impact  
+### What is the impact of the work?  
+* First formal approach to extend Chain-of-Thought to multimodal scenarios  
+* Shows smaller models can achieve strong reasoning with multimodal input  
+* Provides practical solution to reduce hallucination in language models  
 
-## How does/did the work change the landscape of AI?
-* Bridges the gap between language reasoning and visual understanding
-* Demonstrates that combining modalities can improve reliability of AI reasoning
-* Makes multimodal reasoning possible without massive models or computational resources
+### How does/did the work change the landscape of AI?  
+* Bridges the gap between language reasoning and visual understanding  
+* Demonstrates that combining modalities can improve reliability of AI reasoning  
+* Makes multimodal reasoning possible without massive models or computational resources  
 
-## Importance of the work
-* Shows how adding images helps AI reason better and make fewer mistakes.
-* Achieves great results with smaller, cheaper models anyone can use.
-* Opens new possibilities for adding other modalities of information (like audio or sensor data) to AI reasoning systems.
+### Importance of the work  
+* Shows how adding images helps AI reason better and make fewer mistakes.  
+* Achieves great results with smaller, cheaper models anyone can use.  
+* Opens new possibilities for adding other modalities of information (like audio or sensor data) to AI reasoning systems.  
 
-## Intersection with Other Work
-### Past:
-Builds on Chain-of-Thought prompting research
-Extends visual-language models to include reasoning capabilities
-### Present:
-Provides framework for combining multiple modalities in AI reasoning
-Shows way to reduce hallucination through visual feature extraction
-### Future:
-Framework can potentially be extended to other modalities beyond vision (audio, sensor data, etc.)
-Two-stage approach could be adapted for other types of reasoning tasks
-
-
+### Intersection with Other Work  
+**Past:**  
+Builds on Chain-of-Thought prompting research  
+Extends visual-language models to include reasoning capabilities  
+**Present:**  
+Provides framework for combining multiple modalities in AI reasoning  
+Shows way to reduce hallucination through visual feature extraction  
+**Future:**  
+Framework can potentially be extended to other modalities beyond vision (audio, sensor data, etc.)  
+Two-stage approach could be adapted for other types of reasoning tasks  
 
 
-# Reference
+
+
+## Reference
 * Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, and Denny Zhou. Rationale-augmented ensembles in language models. _ArXiv preprint_, abs/2207.00747, 2022c. 
 * Denny Zhou, Nathanael Schärli, Le Hou, Jason Wei, Nathan Scales, Xuezhi Wang, Dale Schuurmans, Olivier Bousquet, Quoc Le, and Ed Chi. Least-to-most prompting enables complex reasoning in large language models. _ArXiv preprint_, abs/2205.10625, 2022. 
 * Pan Lu, Liang Qiu, Kai-Wei Chang, Ying Nian Wu, Song-Chun Zhu, Tanmay Rajpurohit, Peter Clark, and Ashwin Kalyan. Dynamic prompt learning via policy gradient for semi-structured mathematical reasoning. _ArXiv preprint_, abs/2209.14610, 2022b. 
-* Yao Fu, Hao Peng, Ashish Sabharwal, Peter Clark, and Tushar Khot. Complexity-based prompting for multi-step reasoning. _ArXiv preprint_, abs/2210.00720, 2022. 
+* Yao Fu, Hao Peng, Ashish Sabharwal, Peter Clark, and Tushar Khot. Complexity-based prompting for multi-step reasoning. _ArXiv preprint_, abs/2210.00720, 2022.
+* Pan Lu, Swaroop Mishra, Tony Xia, Liang Qiu, Kai-Wei Chang, Song-Chun Zhu, Oyvind Tafjord, Peter Clark, and Ashwin Kalyan. Learn to explain: Multimodal reasoning via thought chains for science question answering. Advances in Neural Information Processing Systems, 35:2507–2521, 2022a.
+* Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words:F Transformers for image recognition at scale. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May 3-7, 2021. OpenReview.net, 2021b.
+* Dustin Schwenk, Apoorv Khandelwal, Christopher Clark, Kenneth Marino, and Roozbeh Mottaghi. A-okvqa: A benchmark for visual question answering using world knowledge. In Computer Vision–ECCV 2022: 17th European Conference, Tel Aviv, Israel, October 23–27, 2022, Proceedings, Part VIII, pp. 146–162. Springer, 2022.
+* Zhuosheng Zhang, Aston Zhang, Mu Li, Hai Zhao, and Alex Smola. Multimodal Chain-of-Thought Reasoning in Language Models. In Transactions on Machine Learning Research, TMLR 2024, May 2024.
